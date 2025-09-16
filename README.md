@@ -32,30 +32,3 @@ Transform your text into engaging buzzwords with AI! Buzzify is a modern web app
 ## License
 
 This project is licensed under the MIT License.
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ installed on your machine
-- A Supabase account (free at [supabase.com](https://supabase.com))
-- An OpenAI API key for your own requests after free ones are used
-
-## Tech Stack
-
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **Authentication**: Supabase Auth
-- **Database**: Supabase (PostgreSQL)
-- **Icons**: Lucide React
-- **AI**: OpenAI GPT-5-mini
-- **Deployment**: Vercel (recommended)
-
-## Privacy & Security
-
-- Email verification required for account creation
-- Row Level Security (RLS) enabled on all database tables
-- API keys are encrypted and stored securely
-- Users can only access their own data
-- No text or API keys are logged or shared
