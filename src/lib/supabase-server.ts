@@ -1,0 +1,112 @@
+import { createServerClient } from '@supabase/ssr'
+import { NextRequest, NextResponse } from 'next/server'
+
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string
+          email: string | null
+          api_key: string | null
+          free_requests_used: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email?: string | null
+          api_key?: string | null
+          free_requests_used?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string | null
+          api_key?: string | null
+          free_requests_used?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      requests: {
+        Row: {
+          id: string
+          user_id: string
+          input_text: string
+          output_text: string | null
+          used_free_request: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          input_text: string
+          output_text?: string | null
+          used_free_request?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          input_text?: string
+          output_text?: string | null
+          used_free_request?: boolean
+          created_at?: string
+        }
+      }
+    }
+  }
+}
+
+export const createClient = async (request?: NextRequest) => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+  if (request) {
+    // For API routes
+    const response = NextResponse.next()
+    
+    const supabase = createServerClient<Database>(
+      supabaseUrl,
+      supabaseKey,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            response.cookies.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            response.cookies.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
+
+    return { supabase, response }
+  } else {
+    // For server components (not used in this case)
+    const supabase = createServerClient<Database>(
+      supabaseUrl,
+      supabaseKey,
+      {
+        cookies: {
+          get(name: string) {
+            return undefined
+          },
+          set(name: string, value: string, options: any) {
+            // No-op for server components
+          },
+          remove(name: string, options: any) {
+            // No-op for server components  
+          },
+        },
+      }
+    )
+
+    return { supabase }
+  }
+}
