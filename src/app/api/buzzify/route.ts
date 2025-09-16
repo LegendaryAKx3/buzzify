@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase-server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { shouldResetRequests, getEffectiveFreeRequestsUsed, getTodayMidnightUTC } from '@/lib/request-reset';
 
 interface Profile {
   id: string;
   email: string | null;
   api_key: string | null;
   free_requests_used: number;
+  free_requests_reset_at: string;
   created_at: string;
   updated_at: string;
 }
@@ -84,7 +86,8 @@ export async function POST(req: NextRequest) {
         .insert({
           id: user.id,
           email: user.email,
-          free_requests_used: 0
+          free_requests_used: 0,
+          free_requests_reset_at: getTodayMidnightUTC().toISOString()
         })
         .select()
         .single();
@@ -105,7 +108,31 @@ export async function POST(req: NextRequest) {
     }
 
     const typedProfile = profile as Profile;
-    const freeRequestsRemaining = Math.max(0, 5 - (typedProfile.free_requests_used || 0));
+    
+    // Check if we need to reset the daily requests
+    let effectiveFreeRequestsUsed = getEffectiveFreeRequestsUsed(typedProfile);
+    let needsReset = shouldResetRequests(typedProfile.free_requests_reset_at);
+    
+    // If we need to reset, update the database
+    if (needsReset) {
+      const { error: resetError } = await (supabase as any)
+        .from('profiles')
+        .update({
+          free_requests_used: 0,
+          free_requests_reset_at: getTodayMidnightUTC().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (resetError) {
+        console.error('Error resetting requests:', resetError);
+        // Continue anyway, using the calculated effective count
+      } else {
+        effectiveFreeRequestsUsed = 0;
+      }
+    }
+    
+    const freeRequestsRemaining = Math.max(0, 5 - effectiveFreeRequestsUsed);
     let useUserApiKey = false;
     let usedFreeRequest = false;
 
@@ -167,10 +194,11 @@ Rules:
 
     // Update usage tracking
     if (usedFreeRequest) {
+      const newUsedCount = needsReset ? 1 : effectiveFreeRequestsUsed + 1;
       const { error: updateError } = await (supabase as any)
         .from('profiles')
         .update({ 
-          free_requests_used: (typedProfile.free_requests_used || 0) + 1,
+          free_requests_used: newUsedCount,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);

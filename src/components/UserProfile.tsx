@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { getEffectiveFreeRequestsUsed } from '@/lib/request-reset'
 import { Key, Save, Eye, EyeOff, AlertCircle, CheckCircle, LogOut, CreditCard } from 'lucide-react'
 
 interface UserProfileProps {
@@ -15,6 +16,7 @@ interface Profile {
   email: string | null
   api_key: string | null
   free_requests_used: number
+  free_requests_reset_at: string
   created_at: string
   updated_at: string
 }
@@ -89,7 +91,9 @@ export default function UserProfile({ isOpen, onClose }: UserProfileProps) {
 
   if (!isOpen) return null
 
-  const freeRequestsRemaining = Math.max(0, 5 - (profile?.free_requests_used || 0))
+  // Calculate effective free requests used (accounting for daily reset)
+  const effectiveFreeRequestsUsed = profile ? getEffectiveFreeRequestsUsed(profile) : 0
+  const freeRequestsRemaining = Math.max(0, 5 - effectiveFreeRequestsUsed)
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

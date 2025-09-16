@@ -10,6 +10,7 @@ export type Database = {
           email: string | null
           api_key: string | null
           free_requests_used: number
+          free_requests_reset_at: string
           created_at: string
           updated_at: string
         }
@@ -18,6 +19,7 @@ export type Database = {
           email?: string | null
           api_key?: string | null
           free_requests_used?: number
+          free_requests_reset_at?: string
           created_at?: string
           updated_at?: string
         }
@@ -26,6 +28,7 @@ export type Database = {
           email?: string | null
           api_key?: string | null
           free_requests_used?: number
+          free_requests_reset_at?: string
           created_at?: string
           updated_at?: string
         }
