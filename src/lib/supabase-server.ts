@@ -76,14 +76,13 @@ export const createClient = async (request?: NextRequest) => {
       supabaseKey,
       {
         cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value
+          getAll() {
+            return request.cookies.getAll()
           },
-          set(name: string, value: string, options: any) {
-            response.cookies.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            response.cookies.set({ name, value: '', ...options })
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options)
+            })
           },
         },
       }
@@ -97,14 +96,11 @@ export const createClient = async (request?: NextRequest) => {
       supabaseKey,
       {
         cookies: {
-          get(name: string) {
-            return undefined
+          getAll() {
+            return []
           },
-          set(name: string, value: string, options: any) {
+          setAll() {
             // No-op for server components
-          },
-          remove(name: string, options: any) {
-            // No-op for server components  
           },
         },
       }
