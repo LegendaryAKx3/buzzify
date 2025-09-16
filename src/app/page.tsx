@@ -11,6 +11,7 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const [inputText, setInputText] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [length, setLength] = useState<'short' | 'medium' | 'long'>('medium');
   const [result, setResult] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,6 +56,7 @@ export default function Home() {
         body: JSON.stringify({
           text: inputText,
           apiKey: apiKey,
+          length: length,
         }),
       });
 
@@ -199,6 +201,49 @@ export default function Home() {
               <p className="text-xs text-gray-500 mt-1">
                 Cmd/Ctrl + Enter to buzzify
               </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-300 mb-3">
+                Response Length
+              </label>
+              <div className="space-y-3">
+                <div className="relative">
+                  <div 
+                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-300 ease-out"
+                    style={{
+                      width: `${((length === 'short' ? 0 : length === 'medium' ? 1 : 2) / 2) * 100}%`,
+                      zIndex: 1,
+                      height: '16px',
+                      borderRadius: '12px'
+                    }}
+                  />
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="1"
+                    value={length === 'short' ? 0 : length === 'medium' ? 1 : 2}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      setLength(value === 0 ? 'short' : value === 1 ? 'medium' : 'long');
+                    }}
+                    className="w-full length-slider relative z-10"
+                    style={{ background: 'transparent' }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className={`slider-label ${length === 'short' ? 'active' : 'text-gray-400'}`}>
+                    Short
+                  </span>
+                  <span className={`slider-label ${length === 'medium' ? 'active' : 'text-gray-400'}`}>
+                    Medium
+                  </span>
+                  <span className={`slider-label ${length === 'long' ? 'active' : 'text-gray-400'}`}>
+                    Long
+                  </span>
+                </div>
+              </div>
             </div>
 
             <button

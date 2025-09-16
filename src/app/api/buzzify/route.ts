@@ -16,7 +16,7 @@ interface Profile {
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, apiKey } = await req.json();
+    const { text, apiKey, length = 'medium' } = await req.json();
     
     if (!text || text.trim().length === 0) {
       return NextResponse.json(
@@ -169,13 +169,12 @@ export async function POST(req: NextRequest) {
 Rules:
 - Keep the original meaning intact
 - Use modern business buzzwords and trendy terms
-- Make it sound more professional and exciting
-- Don't make it too long or overly complex
-- Focus on impact and engagement`;
+- Make it sound more professional and complex
+- Length should be ${length === 'short' ? 'concise and brief' : length === 'medium' ? 'moderately detailed' : 'extensively detailed with multiple sentences'}`;
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-5-nano",
       messages: [
         {
           role: "system",
@@ -186,8 +185,6 @@ Rules:
           content: prompt,
         },
       ],
-      max_tokens: 500,
-      temperature: 0.8,
     });
 
     const result = completion.choices[0]?.message?.content?.trim() || 'No result generated';
