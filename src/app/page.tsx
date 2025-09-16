@@ -181,7 +181,7 @@ export default function Home() {
                   className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  You've used all your free requests. Enter your API key or save one in your profile.
+                  You&apos;ve used all your free requests. Enter your API key or save one in your profile.
                 </p>
               </div>
             )}

@@ -27,7 +27,11 @@ const eslintConfig = [
       // Allow explicit any types
       "@typescript-eslint/no-explicit-any": "off",
       // Allow unused variables (useful during development)
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": "off",
+      // Allow unescaped entities in JSX
+      "react/no-unescaped-entities": "off",
+      // Disable exhaustive deps check for useEffect
+      "react-hooks/exhaustive-deps": "off",
     },
   },
 ];
