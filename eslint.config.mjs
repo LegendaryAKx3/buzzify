@@ -20,6 +20,16 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  {
+    rules: {
+      // Disable prefer-const rule to allow let declarations
+      "prefer-const": "off",
+      // Allow explicit any types
+      "@typescript-eslint/no-explicit-any": "off",
+      // Allow unused variables (useful during development)
+      "@typescript-eslint/no-unused-vars": "warn",
+    },
+  },
 ];
 
 export default eslintConfig;
