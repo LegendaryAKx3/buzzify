@@ -1,68 +1,29 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+let browserSupabaseClient: SupabaseClient | null = null
 
-export type Database = {
-  public: {
-    Tables: {
-      profiles: {
-        Row: {
-          id: string
-          email: string | null
-          api_key: string | null
-          free_requests_used: number
-          free_requests_reset_at: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id: string
-          email?: string | null
-          api_key?: string | null
-          free_requests_used?: number
-          free_requests_reset_at?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          email?: string | null
-          api_key?: string | null
-          free_requests_used?: number
-          free_requests_reset_at?: string
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      requests: {
-        Row: {
-          id: string
-          user_id: string
-          input_text: string
-          output_text: string | null
-          used_free_request: boolean
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          input_text: string
-          output_text?: string | null
-          used_free_request?: boolean
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          input_text?: string
-          output_text?: string | null
-          used_free_request?: boolean
-          created_at?: string
-        }
-      }
-    }
-  }
+export function hasSupabaseEnv() {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  )
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+export function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+
+  if (!supabaseUrl) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL')
+  }
+
+  if (!supabaseAnonKey) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  }
+
+  if (!browserSupabaseClient) {
+    browserSupabaseClient = createClient(supabaseUrl, supabaseAnonKey)
+  }
+
+  return browserSupabaseClient
+}

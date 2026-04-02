@@ -9,10 +9,10 @@ Transform your text into engaging buzzwords with AI! Buzzify is a modern web app
 
 ## Features
 
-- User Authentication: Secure email/password authentication with email verification
-- Free Requests: 5 free buzzifications per user account that reset daily at midnight UTC
-- API Key Management: Save your OpenAI API key securely in your profile
-- AI-Powered Text Transformation: Uses OpenAI's GPT models to transform text into corporate buzzwords
+- Public Generation: Anyone can buzzify text without signing in
+- Optional Accounts: Sign in only to unlock the local history sidebar on that device
+- Local History Sidebar: Signed-in users can browse past generations stored in their browser
+- AI-Powered Text Transformation: Uses OpenRouter with an env-configurable model
 - Dark Theme with Green Accents: Modern, eye-friendly interface
 - Real-time Processing: Instant text transformation with loading states
 - Copy to Clipboard: Easy copying of buzzified text
@@ -25,9 +25,17 @@ Transform your text into engaging buzzwords with AI! Buzzify is a modern web app
 - Language: TypeScript
 - Styling: Tailwind CSS v4
 - Authentication: Supabase Auth
-- Database: Supabase (PostgreSQL)
+- Storage: Browser localStorage for generation history
 - Icons: Lucide React
-- AI: OpenAI GPT-5-nano
+- AI: OpenRouter (model set via env)
+
+## Environment Variables
+
+Copy `.env.example` to `.env.local` and fill in the values you want to use:
+
+```bash
+cp .env.example .env.local
+```
 
 ## License
 

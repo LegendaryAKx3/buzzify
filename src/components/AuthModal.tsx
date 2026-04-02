@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseClient, hasSupabaseEnv } from '@/lib/supabase'
 import { Mail, Lock, User, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
 
 interface AuthModalProps {
@@ -25,6 +25,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setMessage('')
 
     try {
+      if (!hasSupabaseEnv()) {
+        throw new Error('Supabase auth is not configured in this environment')
+      }
+
+      const supabase = getSupabaseClient()
+
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
           email,

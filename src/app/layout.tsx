@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Buzzify - Transform Text into Buzzwords",
-  description: "AI-powered tool to transform your text into engaging buzzwords using OpenAI",
+  description: "AI-powered tool to transform your text into engaging buzzwords using OpenRouter",
   icons: {
     icon: '/favicon.png',
   },

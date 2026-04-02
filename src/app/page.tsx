@@ -1,16 +1,23 @@
 'use client';
 
-import { useState } from 'react';
-import { Sparkles, Key, Copy, CheckCircle, AlertCircle, User, Settings } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Sparkles, Copy, CheckCircle, AlertCircle, User, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import GenerationHistorySidebar from '@/components/GenerationHistorySidebar';
 import AuthModal from '@/components/AuthModal';
 import UserProfile from '@/components/UserProfile';
+import {
+  createGenerationHistoryEntry,
+  GENERATION_HISTORY_STORAGE_KEY,
+  type GenerationHistoryEntry,
+  loadGenerationHistory,
+  readGenerationHistory,
+  saveGenerationHistoryEntry,
+} from '@/lib/generation-history';
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const [inputText, setInputText] = useState('');
-  const [apiKey, setApiKey] = useState('');
   const [length, setLength] = useState<'short' | 'medium' | 'long'>('medium');
   const [result, setResult] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -18,61 +25,74 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [freeRequestsRemaining, setFreeRequestsRemaining] = useState<number | null>(null);
+  const [showHistorySidebar, setShowHistorySidebar] = useState(true);
+  const [historyEntries, setHistoryEntries] = useState<GenerationHistoryEntry[]>([]);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setHistoryEntries(readGenerationHistory());
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === GENERATION_HISTORY_STORAGE_KEY) {
+        setHistoryEntries(loadGenerationHistory(event.newValue));
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      setShowHistorySidebar(true);
+    }
+  }, [user]);
 
   const handleBuzzify = async () => {
-    if (!inputText.trim()) {
+    const normalizedText = inputText.trim();
+
+    if (!normalizedText) {
       setError('Please enter some text to buzzify');
       return;
     }
 
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
-
-    console.log('Making buzzify request with user:', user?.id);
     setIsLoading(true);
     setError('');
     setResult('');
 
     try {
-      // Get the current session to include the access token
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        setError('Please sign in again');
-        setShowAuthModal(true);
-        return;
-      }
-
       const response = await fetch('/api/buzzify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
         },
-        credentials: 'include',
         body: JSON.stringify({
-          text: inputText,
-          apiKey: apiKey,
+          text: normalizedText,
           length: length,
         }),
       });
 
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to buzzify text');
       }
 
       setResult(data.result);
-      setFreeRequestsRemaining(data.free_requests_remaining);
-      
-      if (data.used_free_request) {
-        setError('');
+
+      const entry = createGenerationHistoryEntry({
+        inputText: normalizedText,
+        outputText: data.result,
+        length,
+      });
+
+      setSelectedHistoryId(entry.id);
+
+      try {
+        const nextEntries = saveGenerationHistoryEntry(entry);
+        setHistoryEntries(nextEntries);
+      } catch (storageError) {
+        console.error('Failed to save generation history', storageError);
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred while processing your request');
@@ -93,6 +113,14 @@ export default function Home() {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       handleBuzzify();
     }
+  };
+
+  const handleSelectHistory = (entry: GenerationHistoryEntry) => {
+    setInputText(entry.inputText);
+    setResult(entry.outputText);
+    setLength(entry.length);
+    setSelectedHistoryId(entry.id);
+    setError('');
   };
 
   if (authLoading) {
@@ -127,11 +155,6 @@ export default function Home() {
                     <Settings className="w-4 h-4" />
                     <span className="hidden sm:inline">Profile</span>
                   </button>
-                  {freeRequestsRemaining !== null && (
-                    <div className="text-sm text-gray-400">
-                      Free: {freeRequestsRemaining}/5
-                    </div>
-                  )}
                 </>
               ) : (
                 <button
@@ -149,8 +172,8 @@ export default function Home() {
           </p>
           <p className="text-sm text-gray-500 mt-2">
             {user 
-              ? `Welcome back, ${user.email}! • 5 free requests, then use your own API key`
-              : 'Sign up for 5 free requests • Powered by OpenAI'
+              ? `Welcome back, ${user.email}! • Open the right sidebar to browse this device's history`
+              : 'Generate freely • Sign in if you want the local history sidebar'
             }
           </p>
         </div>
@@ -158,34 +181,6 @@ export default function Home() {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Input Section */}
           <div className="space-y-6">
-            {!user && (
-              <div className="p-4 bg-blue-900 border border-blue-700 rounded-lg">
-                <p className="text-blue-200 text-sm">
-                  <User className="w-4 h-4 inline mr-2" />
-                  Sign up to get 5 free buzzifications! After that, you can use your own OpenAI API key.
-                </p>
-              </div>
-            )}
-
-            {user && freeRequestsRemaining !== null && freeRequestsRemaining === 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  <Key className="w-4 h-4 inline mr-2" />
-                  OpenAI API Key (Required)
-                </label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-..."
-                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  You&apos;ve used all your free requests. Enter your API key or save one in your profile.
-                </p>
-              </div>
-            )}
-
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Your Text
@@ -259,7 +254,7 @@ export default function Home() {
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  {user ? 'Buzzify Text' : 'Sign In to Buzzify'}
+                  Buzzify Text
                 </>
               )}
             </button>
@@ -328,10 +323,20 @@ export default function Home() {
         {/* Footer */}
         <div className="text-center py-8 mt-12 border-t border-gray-800">
           <p className="text-gray-500 text-sm">
-            Built with Next.js, Tailwind CSS, Supabase, and OpenAI
+            Built with Next.js, Tailwind CSS, Supabase Auth, and OpenRouter
           </p>
         </div>
       </div>
+
+      {user && (
+        <GenerationHistorySidebar
+          entries={historyEntries}
+          isOpen={showHistorySidebar}
+          selectedEntryId={selectedHistoryId}
+          onSelect={handleSelectHistory}
+          onToggle={() => setShowHistorySidebar((current) => !current)}
+        />
+      )}
 
       {/* Modals */}
       <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
